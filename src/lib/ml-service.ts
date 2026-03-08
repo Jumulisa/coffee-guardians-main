@@ -1,5 +1,5 @@
 // Service to communicate with the backend ML model API
-const ML_API_URL = import.meta.env.VITE_ML_API_URL || 'https://7860-m-s-t2rto0qj8ynz-b.us-east1-2.prod.colab.dev';
+const ML_API_URL = import.meta.env.VITE_ML_API_URL || 'https://badgirlriri-coffeeguard-ai.hf.space';
 const USE_MOCK = import.meta.env.VITE_USE_MOCK_ML === 'true';
 
 export interface BackendPrediction {
