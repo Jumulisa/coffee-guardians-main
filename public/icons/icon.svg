@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#653321" rx="64"/>
+  <ellipse cx="256" cy="280" rx="120" ry="140" fill="#4a2518"/>
+  <ellipse cx="256" cy="260" rx="100" ry="120" fill="#8B4513"/>
+  <path d="M 200 200 Q 256 180 312 200 Q 330 160 310 130 Q 256 140 200 130 Q 180 160 200 200" fill="#fff" opacity="0.3"/>
+  <text x="256" y="450" text-anchor="middle" fill="#fff" font-size="48" font-family="Arial" font-weight="bold">CG</text>
+</svg>
