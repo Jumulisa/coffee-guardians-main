@@ -1,0 +1,43 @@
+services:
+  # Backend API Service
+  - type: web
+    name: coffee-guardian-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_ORIGINS
+        value: https://coffee-guardian.onrender.com,https://coffee-guardians.onrender.com
+      - key: DATABASE_PATH
+        value: /tmp/coffee_guardian.db
+      - key: FLASK_DEBUG
+        value: false
+    healthCheckPath: /api/health
+
+  # Frontend Static Site
+  - type: web
+    name: coffee-guardian
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: public, max-age=0, must-revalidate
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: coffee-guardian-api
+          property: host
+      - key: VITE_USE_MOCK_ML
+        value: "true"
+      - key: VITE_DEBUG
+        value: "false"

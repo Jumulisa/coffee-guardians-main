@@ -22,3 +22,18 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Environment files (keep .env.example)
+.env
+.env.local
+.env.production.local
+
+# Database files
+*.db
+backend/coffee_guardian.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+backend/venv/
+.venv/

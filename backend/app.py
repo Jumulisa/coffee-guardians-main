@@ -14,12 +14,16 @@ import os
 from functools import wraps
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:5173", "http://localhost:8080", "http://localhost:8081", "http://localhost:8082", "http://localhost:8083", "http://localhost:8084", "http://localhost:8085", "http://localhost:3000", "http://127.0.0.1:8080", "http://127.0.0.1:8081", "http://127.0.0.1:8082", "http://127.0.0.1:8083", "http://127.0.0.1:8084"])
+
+# CORS configuration - allow frontend origins
+allowed_origins = os.environ.get('ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:8080,http://localhost:8081,http://localhost:8082,http://localhost:8083,http://localhost:8084,http://localhost:8085,http://localhost:3000').split(',')
+CORS(app, origins=allowed_origins, supports_credentials=True)
 
 # Secret key for JWT - in production, use environment variable
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'coffee-guardian-secret-key-change-in-production')
 
-DATABASE = 'coffee_guardian.db'
+# Database path - use /tmp for Render's ephemeral storage or persistent disk
+DATABASE = os.environ.get('DATABASE_PATH', 'coffee_guardian.db')
 
 # Simple password hashing (compatible with all Python versions)
 def hash_password(password: str) -> str:
@@ -493,6 +497,10 @@ def health_check():
     """Health check endpoint."""
     return jsonify({'status': 'healthy', 'service': 'Coffee Guardian API'})
 
+# Initialize database on import (for gunicorn)
+init_db()
+
 if __name__ == '__main__':
-    init_db()
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    port = int(os.environ.get('PORT', 5001))
+    debug = os.environ.get('FLASK_DEBUG', 'true').lower() == 'true'
+    app.run(host='0.0.0.0', port=port, debug=debug)
