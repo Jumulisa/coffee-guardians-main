@@ -226,7 +226,7 @@ export const mlService = {
       const formData = new FormData();
       formData.append('image', imageFile);
 
-      const response = await fetch(`${ML_API_URL}/detect/`, {
+      const response = await fetch(`${ML_API_URL}/predict`, {
         method: 'POST',
         body: formData,
       });
