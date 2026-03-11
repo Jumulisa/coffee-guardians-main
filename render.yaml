@@ -10,7 +10,7 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: ALLOWED_ORIGINS
-        value: https://coffee-guardian.onrender.com,https://coffee-guardians.onrender.com
+        value: https://coffee-guardian.onrender.com,https://coffee-guardians.onrender.com,https://coffee-guardian-cz50.onrender.com
       - key: DATABASE_PATH
         value: /tmp/coffee_guardian.db
       - key: FLASK_DEBUG
