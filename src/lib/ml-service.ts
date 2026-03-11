@@ -387,6 +387,25 @@ const checkIfLikelyLeaf = async (imageFile: File): Promise<{ isLikelyLeaf: boole
 
 export const mlService = {
   /**
+   * Helper to get mock prediction with GradCAM - used for fallback
+   */
+  async getMockPredictionWithGradCAM(imageFile: File): Promise<BackendPrediction> {
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate delay
+    const prediction = getMockPrediction();
+    
+    // Generate GradCAM visualization
+    const isHealthy = prediction.disease.toLowerCase().includes('healthy');
+    try {
+      const gradcamUrl = await generateMockGradCAM(imageFile, prediction.severity, isHealthy);
+      prediction.gradcamUrl = gradcamUrl;
+    } catch (error) {
+      console.error('Failed to generate GradCAM:', error);
+    }
+    
+    return prediction;
+  },
+
+  /**
    * Send image to backend for disease prediction
    */
     async predictDisease(imageFile: File): Promise<BackendPrediction> {
@@ -401,21 +420,7 @@ export const mlService = {
     // Use mock if enabled or if API fails
     if (USE_MOCK) {
       console.log('Using mock ML prediction (VITE_USE_MOCK_ML=true)');
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
-      const prediction = getMockPrediction();
-      
-      // Generate GradCAM visualization for mock mode
-      const isHealthy = prediction.disease.toLowerCase().includes('healthy');
-      console.log('Generating GradCAM for:', prediction.disease, 'severity:', prediction.severity, 'isHealthy:', isHealthy);
-      try {
-        const gradcamUrl = await generateMockGradCAM(imageFile, prediction.severity, isHealthy);
-        prediction.gradcamUrl = gradcamUrl;
-        console.log('GradCAM generated successfully, URL length:', gradcamUrl?.length);
-      } catch (error) {
-        console.error('Failed to generate mock GradCAM:', error);
-      }
-      
-      return prediction;
+      return await this.getMockPredictionWithGradCAM(imageFile);
     }
 
     try {
@@ -426,6 +431,12 @@ export const mlService = {
         method: 'POST',
         body: formData,
       });
+
+      // If API is unavailable (503), fall back to mock mode
+      if (response.status === 503) {
+        console.warn('ML API unavailable (503), falling back to mock predictions');
+        return await this.getMockPredictionWithGradCAM(imageFile);
+      }
 
       if (!response.ok) {
         throw new Error(`API error: ${response.statusText}`);
@@ -444,8 +455,18 @@ export const mlService = {
       return transformColabResponse(data);
     } catch (error) {
       console.error('Error calling ML API:', error);
-      // Re-throw the error instead of falling back to mock
-      // This allows the UI to show proper error messages (e.g., "not a leaf")
+      
+      // Fall back to mock if it's a network error or service unavailable
+      const errorMessage = (error as Error).message || '';
+      if (errorMessage.includes('Failed to fetch') || 
+          errorMessage.includes('NetworkError') ||
+          errorMessage.includes('503') ||
+          errorMessage.includes('Service Unavailable')) {
+        console.warn('Network error, falling back to mock predictions');
+        return await this.getMockPredictionWithGradCAM(imageFile);
+      }
+      
+      // Re-throw other errors (e.g., "not a leaf")
       throw error;
     }
   },
