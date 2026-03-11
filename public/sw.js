@@ -1,9 +1,9 @@
 // Coffee Guardian Service Worker
 // Provides offline functionality for the PWA
 
-const CACHE_NAME = 'coffee-guardian-v2';
-const STATIC_CACHE = 'coffee-guardian-static-v2';
-const DYNAMIC_CACHE = 'coffee-guardian-dynamic-v2';
+const CACHE_NAME = 'coffee-guardian-v3';
+const STATIC_CACHE = 'coffee-guardian-static-v3';
+const DYNAMIC_CACHE = 'coffee-guardian-dynamic-v3';
 
 // Assets to cache immediately on install
 const STATIC_ASSETS = [
@@ -52,6 +52,11 @@ self.addEventListener('fetch', (event) => {
 
   // Skip non-GET requests
   if (request.method !== 'GET') {
+    return;
+  }
+
+  // Skip range requests (they return 206 which can't be cached)
+  if (request.headers.get('range')) {
     return;
   }
 

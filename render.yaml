@@ -33,10 +33,7 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_URL
-        fromService:
-          type: web
-          name: coffee-guardian-api
-          property: host
+        value: "https://coffee-guardian-api.onrender.com"
       - key: VITE_USE_MOCK_ML
         value: "true"
       - key: VITE_DEBUG
