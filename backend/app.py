@@ -1,6 +1,7 @@
 """
 Coffee Guardian Backend API
 Simple Flask backend with SQLite database for authentication and diagnosis history.
+Updated: 2026-03-11 - Added deployed frontend to CORS
 """
 
 from flask import Flask, request, jsonify
@@ -15,8 +16,9 @@ from functools import wraps
 
 app = Flask(__name__)
 
-# CORS configuration - allow frontend origins
-allowed_origins = os.environ.get('ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:8080,http://localhost:8081,http://localhost:8082,http://localhost:8083,http://localhost:8084,http://localhost:8085,http://localhost:3000').split(',')
+# CORS configuration - allow frontend origins (including deployed Render URLs)
+default_origins = 'http://localhost:5173,http://localhost:8080,http://localhost:8081,http://localhost:8082,http://localhost:8083,http://localhost:8084,http://localhost:8085,http://localhost:3000,https://coffee-guardian.onrender.com,https://coffee-guardians.onrender.com,https://coffee-guardian-cz50.onrender.com'
+allowed_origins = os.environ.get('ALLOWED_ORIGINS', default_origins).split(',')
 CORS(app, origins=allowed_origins, supports_credentials=True)
 
 # Secret key for JWT - in production, use environment variable
