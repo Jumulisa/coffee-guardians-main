@@ -129,6 +129,7 @@ const UploadPage = () => {
             result: {
               id: diagnosisRecord.id,
               imageUrl: preview,
+              gradcamUrl: pred.gradcamUrl,
               date: diagnosisRecord.created_at,
               disease: pred.disease,
               diseaseRw: pred.diseaseRw,
@@ -321,6 +322,35 @@ const UploadPage = () => {
             <CheckCircle className="mr-2 h-6 w-6 group-hover:scale-110 transition-transform" />
             {t("step2Title")}
           </Button>
+        )}
+
+        {/* Error Message */}
+        {apiError && !isAnalyzing && (
+          <div className="mb-8 p-6 rounded-lg border border-red-500/50 bg-red-500/10 backdrop-blur-md animate-fade-in">
+            <div className="flex items-start gap-4">
+              <div className="p-2 rounded-full bg-red-500/20">
+                <AlertCircle className="h-6 w-6 text-red-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-red-400 mb-2">
+                  {apiError.includes("leaf") ? (language === "rw" ? "Ntabwo ari Ikibabi" : "Not a Coffee Leaf") : (language === "rw" ? "Ikosa" : "Error")}
+                </h3>
+                <p className="text-white/80 mb-4">{apiError}</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setApiError(null);
+                    setPreview(null);
+                    setSelectedFile(null);
+                  }}
+                  className="border-red-500/50 text-red-400 hover:bg-red-500/10"
+                >
+                  {language === "rw" ? "Gerageza Ibindi" : "Try Another Image"}
+                </Button>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Prediction Summary */}

@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getDiagnosisHistory, deleteDiagnosis, TreatmentData } from "@/lib/db-service";
-import { Camera, Trash2, Leaf, ArrowRight, Calendar, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { Camera, Trash2, Leaf, ArrowRight, Calendar, Loader2, CheckCircle, AlertCircle, Download } from "lucide-react";
 import { useState, useEffect } from "react";
 
 interface DiagnosisRecord {
@@ -87,6 +87,129 @@ const HistoryPage = () => {
     } catch (error) {
       console.error('Error deleting diagnosis:', error);
     }
+  };
+
+  // Download diagnosis report as PDF-ready HTML
+  const handleDownloadReport = (item: DiagnosisRecord) => {
+    const treatment = parseTreatmentData(item);
+    const date = new Date(item.created_at);
+    const formattedDate = date.toLocaleDateString(language === "rw" ? "rw-RW" : "en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+
+    const reportHTML = `
+<!DOCTYPE html>
+<html lang="${language}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coffee Guardian - ${language === "rw" ? "Raporo y'Isuzuma" : "Diagnosis Report"}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 40px 20px; }
+    .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #22c55e; padding-bottom: 20px; }
+    .header h1 { color: #22c55e; font-size: 28px; margin-bottom: 5px; }
+    .header p { color: #666; font-size: 14px; }
+    .section { margin-bottom: 25px; padding: 20px; background: #f9fafb; border-radius: 8px; border-left: 4px solid #22c55e; }
+    .section h2 { color: #1f2937; font-size: 18px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+    .section h2::before { content: ''; width: 8px; height: 8px; background: #22c55e; border-radius: 50%; }
+    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+    .stat { background: white; padding: 15px; border-radius: 6px; border: 1px solid #e5e7eb; }
+    .stat-label { font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-value { font-size: 20px; font-weight: bold; margin-top: 5px; }
+    .stat-value.severe { color: #ef4444; }
+    .stat-value.moderate { color: #f59e0b; }
+    .stat-value.mild { color: #22c55e; }
+    .treatment-item { background: white; padding: 15px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #e5e7eb; }
+    .treatment-item h3 { font-size: 14px; color: #22c55e; margin-bottom: 8px; }
+    .treatment-item p { font-size: 14px; color: #4b5563; }
+    .image-container { text-align: center; margin: 20px 0; }
+    .image-container img { max-width: 100%; max-height: 300px; border-radius: 8px; border: 2px solid #e5e7eb; }
+    .footer { margin-top: 40px; text-align: center; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #9ca3af; font-size: 12px; }
+    @media print { body { padding: 20px; } .section { break-inside: avoid; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>☕ Coffee Guardian</h1>
+    <p>${language === "rw" ? "Raporo y'Isuzuma ry'Indwara y'Ikawa" : "Coffee Leaf Disease Diagnosis Report"}</p>
+  </div>
+
+  <div class="section">
+    <h2>${language === "rw" ? "Amakuru Rusange" : "Diagnosis Summary"}</h2>
+    <div class="grid">
+      <div class="stat">
+        <div class="stat-label">${language === "rw" ? "Indwara" : "Disease"}</div>
+        <div class="stat-value">${item.disease_name}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">${language === "rw" ? "Urwego" : "Severity"}</div>
+        <div class="stat-value ${item.severity}">${item.severity.toUpperCase()}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">${language === "rw" ? "Ikizere" : "Confidence"}</div>
+        <div class="stat-value">${Math.round(item.confidence)}%</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">${language === "rw" ? "Itariki" : "Date"}</div>
+        <div class="stat-value" style="font-size: 14px;">${formattedDate}</div>
+      </div>
+    </div>
+  </div>
+
+  ${item.image_url ? `
+  <div class="section">
+    <h2>${language === "rw" ? "Ifoto y'Ikibabi" : "Leaf Image"}</h2>
+    <div class="image-container">
+      <img src="${item.image_url}" alt="Diagnosed leaf" />
+    </div>
+  </div>
+  ` : ''}
+
+  <div class="section">
+    <h2>${language === "rw" ? "Ubuvuzi Bwasabwe" : "Recommended Treatment"}</h2>
+    <div class="treatment-item">
+      <h3>${language === "rw" ? "Icyo Gukora" : "Action Required"}</h3>
+      <p>${language === "rw" ? treatment.actionRw : treatment.action}</p>
+    </div>
+    <div class="treatment-item">
+      <h3>${language === "rw" ? "Amabwiriza" : "Instructions"}</h3>
+      <p>${language === "rw" ? treatment.instructionsRw : treatment.instructions}</p>
+    </div>
+    <div class="treatment-item">
+      <h3>${language === "rw" ? "Ubundi Buryo" : "Alternative Treatment"}</h3>
+      <p>${language === "rw" ? treatment.alternativeRw : treatment.alternative}</p>
+    </div>
+    ${treatment.cost ? `
+    <div class="treatment-item">
+      <h3>${language === "rw" ? "Igiciro Cyigenga" : "Estimated Cost"}</h3>
+      <p>${treatment.cost}</p>
+    </div>
+    ` : ''}
+  </div>
+
+  <div class="footer">
+    <p>${language === "rw" ? "Byakorwa na Coffee Guardian AI" : "Generated by Coffee Guardian AI"}</p>
+    <p>${language === "rw" ? "Kubika ibidukikije - Kurinda ikawa" : "Protecting Coffee, Preserving Livelihoods"}</p>
+  </div>
+</body>
+</html>
+    `.trim();
+
+    // Create blob and download
+    const blob = new Blob([reportHTML], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `coffee-guardian-report-${item.disease_name.replace(/\s+/g, '-').toLowerCase()}-${date.toISOString().split('T')[0]}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const stats = {
@@ -266,40 +389,39 @@ const HistoryPage = () => {
                             <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors ml-2" />
                           </div>
 
-                          {/* Affected Area Progress */}
-                          <div className="mt-3 space-y-1">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-muted-foreground">Affected area</span>
-                              <span className="font-semibold text-foreground">{item.affected_area}%</span>
-                            </div>
-                            <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
-                              <div
-                                className={`h-full transition-all duration-300 ${
-                                  item.severity === "mild"
-                                    ? "bg-green-500"
-                                    : item.severity === "moderate"
-                                    ? "bg-yellow-500"
-                                    : "bg-red-500"
-                                }`}
-                                style={{ width: `${item.affected_area}%` }}
-                              />
-                            </div>
+                          {/* View GradCAM hint */}
+                          <div className="mt-3 text-xs text-muted-foreground">
+                            {language === "rw" 
+                              ? "Kanda kugirango urebe aho byakubiwe" 
+                              : "Tap to view affected area visualization"}
                           </div>
                         </div>
                       </CardContent>
                     </Card>
                   </Link>
                   {/* Delete Button */}
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setDeleteConfirm(item.id);
-                    }}
-                    className="mt-1 text-xs text-destructive hover:text-destructive/80 transition-colors"
-                  >
-                    <Trash2 className="h-3 w-3 inline mr-1" />
-                    Delete
-                  </button>
+                  <div className="mt-1 flex items-center gap-3">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleDownloadReport(item);
+                      }}
+                      className="text-xs text-green-400 hover:text-green-300 transition-colors"
+                    >
+                      <Download className="h-3 w-3 inline mr-1" />
+                      {language === "rw" ? "Kuramo" : "Download"}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setDeleteConfirm(item.id);
+                      }}
+                      className="text-xs text-destructive hover:text-destructive/80 transition-colors"
+                    >
+                      <Trash2 className="h-3 w-3 inline mr-1" />
+                      {language === "rw" ? "Siba" : "Delete"}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

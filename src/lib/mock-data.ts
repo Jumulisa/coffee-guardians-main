@@ -5,6 +5,7 @@ export interface DiagnosisResult {
   confidence: number;
   severity: "mild" | "moderate" | "severe";
   affectedArea: number; // percentage
+  gradcamUrl?: string; // GradCAM heatmap visualization URL
   treatment: {
     action: string;
     actionRw: string;

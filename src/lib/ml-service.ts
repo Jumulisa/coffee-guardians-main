@@ -8,6 +8,7 @@ export interface BackendPrediction {
   confidence: number;
   severity: 'mild' | 'moderate' | 'severe';
   affectedArea: number;
+  gradcamUrl?: string; // GradCAM heatmap visualization URL
   treatment: {
     action: string;
     actionRw: string;
@@ -51,6 +52,7 @@ interface ColabApiResponse {
     symptoms: string;
     prevention: string;
   };
+  gradcam_url?: string; // GradCAM heatmap visualization
 }
 
 // Disease name mappings (Colab API -> Display name)
@@ -104,6 +106,7 @@ function transformColabResponse(data: ColabApiResponse): BackendPrediction {
     confidence,
     severity: data.severity?.level || 'mild',
     affectedArea: data.severity?.percent || 0,
+    gradcamUrl: data.gradcam_url,
     treatment,
     allPredictions,
   };
@@ -210,16 +213,209 @@ const getMockPrediction = (): BackendPrediction => {
   return pred;
 };
 
+// Generate a simulated GradCAM heatmap overlay on the original image
+const generateMockGradCAM = async (imageFile: File, severity: 'mild' | 'moderate' | 'severe', isHealthy: boolean): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Failed to get canvas context'));
+          return;
+        }
+        
+        // Draw original image
+        ctx.drawImage(img, 0, 0);
+        
+        // If healthy, return original image without heatmap
+        if (isHealthy) {
+          resolve(canvas.toDataURL('image/jpeg', 0.9));
+          return;
+        }
+        
+        // Create heatmap overlay
+        const heatmapCanvas = document.createElement('canvas');
+        heatmapCanvas.width = img.width;
+        heatmapCanvas.height = img.height;
+        const heatCtx = heatmapCanvas.getContext('2d');
+        if (!heatCtx) {
+          reject(new Error('Failed to get heatmap canvas context'));
+          return;
+        }
+        
+        // Generate random "hot spots" to simulate GradCAM
+        const numSpots = severity === 'severe' ? 6 : severity === 'moderate' ? 4 : 2;
+        const spotSize = Math.min(img.width, img.height) * (severity === 'severe' ? 0.5 : severity === 'moderate' ? 0.4 : 0.25);
+        
+        for (let i = 0; i < numSpots; i++) {
+          const x = Math.random() * img.width * 0.6 + img.width * 0.2;
+          const y = Math.random() * img.height * 0.6 + img.height * 0.2;
+          
+          // Create radial gradient for each hotspot
+          const gradient = heatCtx.createRadialGradient(x, y, 0, x, y, spotSize);
+          
+          // Color based on severity - more vivid colors for better visibility
+          if (severity === 'severe') {
+            gradient.addColorStop(0, 'rgba(255, 0, 0, 0.85)');
+            gradient.addColorStop(0.25, 'rgba(255, 50, 0, 0.7)');
+            gradient.addColorStop(0.5, 'rgba(255, 150, 0, 0.5)');
+            gradient.addColorStop(0.75, 'rgba(255, 220, 0, 0.25)');
+            gradient.addColorStop(1, 'rgba(255, 255, 0, 0)');
+          } else if (severity === 'moderate') {
+            gradient.addColorStop(0, 'rgba(255, 120, 0, 0.8)');
+            gradient.addColorStop(0.3, 'rgba(255, 180, 0, 0.6)');
+            gradient.addColorStop(0.6, 'rgba(255, 220, 0, 0.35)');
+            gradient.addColorStop(1, 'rgba(180, 255, 0, 0)');
+          } else {
+            gradient.addColorStop(0, 'rgba(255, 230, 0, 0.7)');
+            gradient.addColorStop(0.4, 'rgba(200, 255, 0, 0.45)');
+            gradient.addColorStop(1, 'rgba(100, 255, 0, 0)');
+          }
+          
+          heatCtx.fillStyle = gradient;
+          heatCtx.fillRect(0, 0, img.width, img.height);
+        }
+        
+        // Blend heatmap onto original image using multiply for better visibility
+        ctx.globalAlpha = 0.7;
+        ctx.globalCompositeOperation = 'multiply';
+        ctx.drawImage(heatmapCanvas, 0, 0);
+        
+        // Add the colors on top with screen blend
+        ctx.globalAlpha = 0.6;
+        ctx.globalCompositeOperation = 'screen';
+        ctx.drawImage(heatmapCanvas, 0, 0);
+        
+        // Reset
+        ctx.globalAlpha = 1.0;
+        ctx.globalCompositeOperation = 'source-over';
+        
+        resolve(canvas.toDataURL('image/jpeg', 0.9));
+      };
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.readAsDataURL(imageFile);
+  });
+};
+
+// Check if an image looks like a leaf (basic green color detection)
+const checkIfLikelyLeaf = async (imageFile: File): Promise<{ isLikelyLeaf: boolean; greenPercentage: number }> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const size = 100; // Sample at lower resolution for speed
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve({ isLikelyLeaf: true, greenPercentage: 50 }); // Default to allowing
+          return;
+        }
+        
+        ctx.drawImage(img, 0, 0, size, size);
+        const imageData = ctx.getImageData(0, 0, size, size);
+        const data = imageData.data;
+        
+        let naturalGreenPixels = 0;
+        let leafBrownPixels = 0;
+        let artificialColorPixels = 0;
+        const totalPixels = size * size;
+        
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          
+          // Natural leaf green: green dominant, not too saturated, organic tones
+          // Leaves typically have green with some yellow/brown undertones
+          const isNaturalGreen = (
+            g > r && g > b && g > 60 && g < 200 &&
+            Math.abs(r - b) < 60 && // Natural greens have similar R and B
+            (g - Math.max(r, b)) > 10 && // Green should be noticeably dominant
+            (g - Math.max(r, b)) < 100 // But not artificially saturated
+          );
+          
+          // Leaf brown/diseased: brownish-green typical of coffee leaves
+          const isLeafBrown = (
+            r > 40 && r < 180 &&
+            g > 50 && g < 180 &&
+            b < g && b < r &&
+            Math.abs(r - g) < 50 // Brown-green range
+          );
+          
+          // Artificial colors (car paint, plastic, etc.) - very saturated
+          const saturation = (Math.max(r, g, b) - Math.min(r, g, b)) / Math.max(r, g, b, 1);
+          const isArtificial = saturation > 0.7 && (r > 200 || g > 200 || b > 200);
+          
+          if (isNaturalGreen) naturalGreenPixels++;
+          if (isLeafBrown) leafBrownPixels++;
+          if (isArtificial) artificialColorPixels++;
+        }
+        
+        const naturalPercentage = (naturalGreenPixels / totalPixels) * 100;
+        const brownPercentage = (leafBrownPixels / totalPixels) * 100;
+        const artificialPercentage = (artificialColorPixels / totalPixels) * 100;
+        const greenPercentage = naturalPercentage + brownPercentage * 0.3;
+        
+        // Reject if too many artificial-looking pixels
+        // Require higher percentage of natural green/brown colors
+        const isLikelyLeaf = greenPercentage > 15 && artificialPercentage < 20;
+        
+        console.log('Leaf detection - natural green%:', naturalPercentage.toFixed(1), 
+                    'brown%:', brownPercentage.toFixed(1),
+                    'artificial%:', artificialPercentage.toFixed(1),
+                    'isLikelyLeaf:', isLikelyLeaf);
+        resolve({ isLikelyLeaf, greenPercentage });
+      };
+      img.onerror = () => resolve({ isLikelyLeaf: true, greenPercentage: 50 });
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => resolve({ isLikelyLeaf: true, greenPercentage: 50 });
+    reader.readAsDataURL(imageFile);
+  });
+};
+
 export const mlService = {
   /**
    * Send image to backend for disease prediction
    */
     async predictDisease(imageFile: File): Promise<BackendPrediction> {
+    // First, check if the image looks like a leaf
+    const leafCheck = await checkIfLikelyLeaf(imageFile);
+    if (!leafCheck.isLikelyLeaf) {
+      throw new Error(
+        'This doesn\'t appear to be a coffee leaf image. Please upload a clear photo of a coffee leaf for disease diagnosis. Make sure the leaf is well-lit and fills most of the frame.'
+      );
+    }
+
     // Use mock if enabled or if API fails
     if (USE_MOCK) {
       console.log('Using mock ML prediction (VITE_USE_MOCK_ML=true)');
       await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
-      return getMockPrediction();
+      const prediction = getMockPrediction();
+      
+      // Generate GradCAM visualization for mock mode
+      const isHealthy = prediction.disease.toLowerCase().includes('healthy');
+      console.log('Generating GradCAM for:', prediction.disease, 'severity:', prediction.severity, 'isHealthy:', isHealthy);
+      try {
+        const gradcamUrl = await generateMockGradCAM(imageFile, prediction.severity, isHealthy);
+        prediction.gradcamUrl = gradcamUrl;
+        console.log('GradCAM generated successfully, URL length:', gradcamUrl?.length);
+      } catch (error) {
+        console.error('Failed to generate mock GradCAM:', error);
+      }
+      
+      return prediction;
     }
 
     try {

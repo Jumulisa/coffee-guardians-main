@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { DiagnosisResult } from "@/lib/mock-data";
-import { Camera, ChevronDown, ChevronUp, BookOpen, Leaf, AlertCircle, CheckCircle, Clock, Droplet, Shield, FlaskConical, Calendar, Package, Info, AlertTriangle, Zap } from "lucide-react";
+import { Camera, ChevronDown, ChevronUp, BookOpen, Leaf, AlertCircle, CheckCircle, Clock, Droplet, Shield, FlaskConical, Calendar, Package, Info, AlertTriangle, Zap, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 
 // Disease educational descriptions
@@ -253,8 +253,8 @@ const severityConfig = {
     urgencyColor: "bg-green-500/20 border-green-500",
     urgencyDesc: "Low risk - Can be managed with regular monitoring. Apply preventive treatment within the next 1-2 weeks.",
     urgencyDescRw: "Ingaruka nke - Bishobora gucungwa mu kureba buri gihe. Shyira umuti ukumira mu byumweru 1-2 biri imbere.",
-    areaDesc: "Less than 25% of the leaf is affected",
-    areaDescRw: "Munsi ya 25% y'ibabi byakubiwe"
+    areaDesc: "GradCAM shows minimal affected regions",
+    areaDescRw: "GradCAM yerekana ahantu hake hakubiwe"
   },
   moderate: { 
     label: "moderate", 
@@ -266,8 +266,8 @@ const severityConfig = {
     urgencyColor: "bg-yellow-500/20 border-yellow-500",
     urgencyDesc: "Medium risk - Disease is spreading. Apply treatment within 3-5 days to prevent further damage.",
     urgencyDescRw: "Ingaruka yo hagati - Indwara irakwira. Shyira umuti mu minsi 3-5 kugira ngo wirinde ibindi byangiritse.",
-    areaDesc: "25-50% of the leaf is affected",
-    areaDescRw: "25-50% y'ibabi byakubiwe"
+    areaDesc: "GradCAM shows moderate affected regions",
+    areaDescRw: "GradCAM yerekana ahantu hagati hakubiwe"
   },
   severe: { 
     label: "severe", 
@@ -279,8 +279,8 @@ const severityConfig = {
     urgencyColor: "bg-red-500/20 border-red-500",
     urgencyDesc: "High risk - Requires immediate action. Apply treatment TODAY. Remove and destroy severely affected leaves to prevent spread.",
     urgencyDescRw: "Ingaruka nyinshi - Bisaba gukora vuba. Shyira umuti UYU MUNSI. Kuraho no gutwika amababi yakubiwe cyane kugira ngo wirinde ikwirakwira.",
-    areaDesc: "More than 50% of the leaf is affected",
-    areaDescRw: "Hejuru ya 50% y'ibabi byakubiwe"
+    areaDesc: "GradCAM shows extensive affected regions",
+    areaDescRw: "GradCAM yerekana ahantu henshi hakubiwe"
   },
 };
 
@@ -289,9 +289,16 @@ const ResultPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [showAlt, setShowAlt] = useState(false);
+  const [showGradCAM, setShowGradCAM] = useState(true); // Show GradCAM heatmap by default
 
 
   const result = (location.state as { result?: DiagnosisResult })?.result;
+
+  // Debug: log the result to check gradcamUrl
+  console.log('ResultPage - gradcamUrl:', result?.gradcamUrl ? 'YES (length: ' + result.gradcamUrl.length + ')' : 'NO/MISSING');
+  console.log('ResultPage - disease:', result?.disease);
+  console.log('ResultPage - severity:', result?.severity);
+  console.log('ResultPage - isHealthy check:', result?.disease?.toLowerCase().includes('healthy'));
 
   // Fallback: show error if result is missing or missing key fields
   const missingFields = !result || !result.disease || !result.confidence || !result.severity || !result.treatment;
@@ -364,7 +371,7 @@ const ResultPage = () => {
                   </h3>
                   <p className="text-white/80 mb-3">{urgencyDesc}</p>
                   <div className="flex items-center gap-2 text-sm text-white/60">
-                    <AlertCircle className="h-4 w-4" />
+                    <Eye className="h-4 w-4" />
                     <span>{areaDesc}</span>
                   </div>
                 </div>
@@ -378,59 +385,46 @@ const ResultPage = () => {
           <CardContent className="p-0">
             {result.imageUrl && (
               <div className="relative">
+                {/* Show GradCAM heatmap or original image based on toggle */}
                 <img
-                  src={result.imageUrl}
-                  alt="Diagnosed leaf"
+                  src={showGradCAM && result.gradcamUrl ? result.gradcamUrl : result.imageUrl}
+                  alt={showGradCAM ? "GradCAM heatmap visualization" : "Diagnosed leaf"}
                   className="w-full object-cover max-h-64"
                 />
-                {/* Visual Overlay - Simulated affected area highlight */}
-                {!isHealthy && result.affectedArea > 0 && (
-                  <div className="absolute inset-0 pointer-events-none">
-                    {/* Semi-transparent overlay with gradient showing affected areas */}
-                    <div 
-                      className={`absolute inset-0 ${
-                        result.severity === 'severe' ? 'bg-gradient-to-br from-red-500/30 via-transparent to-red-500/20' :
-                        result.severity === 'moderate' ? 'bg-gradient-to-br from-yellow-500/25 via-transparent to-yellow-500/15' :
-                        'bg-gradient-to-br from-green-500/15 via-transparent to-green-500/10'
-                      }`}
-                    />
-                    {/* Animated scan lines to indicate analysis */}
-                    <div className="absolute inset-0 overflow-hidden">
-                      <div className={`absolute left-0 right-0 h-0.5 ${
-                        result.severity === 'severe' ? 'bg-red-400/50' :
-                        result.severity === 'moderate' ? 'bg-yellow-400/50' : 'bg-green-400/50'
-                      } animate-scan-slow`} style={{ top: '30%' }} />
-                      <div className={`absolute left-0 right-0 h-0.5 ${
-                        result.severity === 'severe' ? 'bg-red-400/30' :
-                        result.severity === 'moderate' ? 'bg-yellow-400/30' : 'bg-green-400/30'
-                      } animate-scan-slow`} style={{ top: '60%', animationDelay: '0.5s' }} />
+                {/* GradCAM Toggle Button - always show for non-healthy */}
+                {!isHealthy && (
+                  <div className="absolute bottom-4 left-4">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setShowGradCAM(!showGradCAM)}
+                      className="bg-black/70 hover:bg-black/80 backdrop-blur-sm border border-white/20"
+                    >
+                      {showGradCAM ? (
+                        <><EyeOff className="h-4 w-4 mr-2" />{language === "rw" ? "Hisha Heatmap" : "Hide Heatmap"}</>
+                      ) : (
+                        <><Eye className="h-4 w-4 mr-2" />{language === "rw" ? "Erekana Aho Byakubiwe" : "Show Affected Areas"}</>
+                      )}
+                    </Button>
+                  </div>
+                )}
+                {/* GradCAM Legend */}
+                {showGradCAM && result.gradcamUrl && !isHealthy && (
+                  <div className="absolute bottom-4 right-4 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2">
+                    <p className="text-xs text-white/80 mb-1">{language === "rw" ? "Ibara ry'ubushyuhe" : "Heatmap Legend"}</p>
+                    <div className="flex items-center gap-1">
+                      <div className="w-16 h-2 rounded bg-gradient-to-r from-yellow-400 via-orange-500 to-red-600"></div>
                     </div>
-                    {/* Corner markers indicating analysis area */}
-                    <div className={`absolute top-2 left-2 w-8 h-8 border-l-2 border-t-2 ${
-                      result.severity === 'severe' ? 'border-red-400' :
-                      result.severity === 'moderate' ? 'border-yellow-400' : 'border-green-400'
-                    }`} />
-                    <div className={`absolute top-2 right-2 w-8 h-8 border-r-2 border-t-2 ${
-                      result.severity === 'severe' ? 'border-red-400' :
-                      result.severity === 'moderate' ? 'border-yellow-400' : 'border-green-400'
-                    }`} />
-                    <div className={`absolute bottom-2 left-2 w-8 h-8 border-l-2 border-b-2 ${
-                      result.severity === 'severe' ? 'border-red-400' :
-                      result.severity === 'moderate' ? 'border-yellow-400' : 'border-green-400'
-                    }`} />
-                    <div className={`absolute bottom-2 right-2 w-8 h-8 border-r-2 border-b-2 ${
-                      result.severity === 'severe' ? 'border-red-400' :
-                      result.severity === 'moderate' ? 'border-yellow-400' : 'border-green-400'
-                    }`} />
-                    {/* Affected area percentage indicator */}
-                    <div className="absolute bottom-4 left-4 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-2">
-                      <p className={`text-sm font-bold ${
-                        result.severity === 'severe' ? 'text-red-400' :
-                        result.severity === 'moderate' ? 'text-yellow-400' : 'text-green-400'
-                      }`}>
-                        {result.affectedArea}% {language === "rw" ? "byakubiwe" : "affected"}
-                      </p>
+                    <div className="flex justify-between text-[10px] text-white/60 mt-0.5">
+                      <span>{language === "rw" ? "Bike" : "Low"}</span>
+                      <span>{language === "rw" ? "Byinshi" : "High"}</span>
                     </div>
+                  </div>
+                )}
+                {/* Debug: Show if gradcamUrl is present */}
+                {!result.gradcamUrl && !isHealthy && (
+                  <div className="absolute top-4 left-4 bg-red-500/80 text-white text-xs px-2 py-1 rounded">
+                    GradCAM not generated
                   </div>
                 )}
                 <div className="absolute top-4 right-4">
@@ -444,15 +438,11 @@ const ResultPage = () => {
               <p className="text-sm uppercase tracking-widest text-white/60 font-semibold mb-2">{t("disease")}</p>
               <h2 className="text-3xl font-bold text-white mb-4">{diseaseName}</h2>
               
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs uppercase tracking-wide text-white/60 mb-1">Confidence</p>
                   <p className="text-2xl font-bold text-green-400">{confidencePercent}%</p>
                   <p className="text-xs text-white/60 mt-1">{confidenceLabel}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-white/60 mb-1">Affected Area</p>
-                  <p className="text-2xl font-bold text-orange-400">{result.affectedArea}%</p>
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-wide text-white/60 mb-1">Severity</p>
@@ -586,8 +576,8 @@ const ResultPage = () => {
                   <p className="text-sm text-blue-300">High confidence diagnosis</p>
                 </div>
                 <div className="p-3 bg-purple-500/10 rounded-lg border border-purple-500/30">
-                  <p className="text-xs text-purple-400 font-semibold mb-1">Analyzed Area</p>
-                  <p className="text-sm text-purple-300">{result.affectedArea}% affected</p>
+                  <p className="text-xs text-purple-400 font-semibold mb-1">{language === "rw" ? "Isesengura GradCAM" : "GradCAM Analysis"}</p>
+                  <p className="text-sm text-purple-300">{language === "rw" ? "Hasi ⬆ reba heatmap" : "See heatmap above"}</p>
                 </div>
               </div>
             </div>
