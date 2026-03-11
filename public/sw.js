@@ -107,7 +107,7 @@ self.addEventListener('fetch', (event) => {
         // Not in cache, fetch from network
         return fetch(request)
           .then((response) => {
-            if (response.ok) {
+            if (response.ok && response.status === 200) {
               const responseClone = response.clone();
               caches.open(DYNAMIC_CACHE).then((cache) => {
                 cache.put(request, responseClone);
