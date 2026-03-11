@@ -108,18 +108,28 @@ const UploadPage = () => {
         return;
       }
 
-      // Save diagnosis to Supabase database
-      const diagnosisRecord = await saveDiagnosis(user.id, {
-        image_url: preview,
-        disease_name: pred.disease,
-        disease_name_rw: pred.diseaseRw,
-        confidence: pred.confidence,
-        severity: pred.severity,
-        affected_area: pred.affectedArea,
-        treatment_action: pred.treatment.action,
-        treatment_data: pred.treatment,
-        estimated_cost: pred.treatment.cost || undefined,
-      });
+      // Try to save diagnosis to database (but don't fail if auth is invalid)
+      let diagnosisId = 'temp-' + Date.now();
+      let diagnosisDate = new Date().toISOString();
+      
+      try {
+        const diagnosisRecord = await saveDiagnosis(user.id, {
+          image_url: preview,
+          disease_name: pred.disease,
+          disease_name_rw: pred.diseaseRw,
+          confidence: pred.confidence,
+          severity: pred.severity,
+          affected_area: pred.affectedArea,
+          treatment_action: pred.treatment.action,
+          treatment_data: pred.treatment,
+          estimated_cost: pred.treatment.cost || undefined,
+        });
+        diagnosisId = diagnosisRecord.id;
+        diagnosisDate = diagnosisRecord.created_at;
+      } catch (saveError) {
+        console.warn('Could not save diagnosis to history (user may need to re-login):', saveError);
+        // Continue anyway - we'll still show the results
+      }
 
       // Show prediction for 2 seconds, then navigate
       setTimeout(() => {
@@ -127,10 +137,10 @@ const UploadPage = () => {
         navigate("/result", { 
           state: { 
             result: {
-              id: diagnosisRecord.id,
+              id: diagnosisId,
               imageUrl: preview,
               gradcamUrl: pred.gradcamUrl,
-              date: diagnosisRecord.created_at,
+              date: diagnosisDate,
               disease: pred.disease,
               diseaseRw: pred.diseaseRw,
               confidence: pred.confidence,
