@@ -35,15 +35,38 @@ async function apiRequest<T>(
     (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
   }
   
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers,
+    });
+  } catch (error) {
+    console.error('Network error:', error);
+    throw new Error('Unable to connect to the server. Please check your internet connection.');
+  }
   
-  const data = await response.json();
+  // Handle empty responses
+  const text = await response.text();
+  let data: any;
+  
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      console.error('Invalid JSON response:', text);
+      throw new Error('Server returned an invalid response. Please try again later.');
+    }
+  } else {
+    // Empty response
+    if (!response.ok) {
+      throw new Error(`Server error (${response.status}). Please try again later.`);
+    }
+    data = {};
+  }
   
   if (!response.ok) {
-    throw new Error(data.error || 'Request failed');
+    throw new Error(data.error || `Request failed (${response.status})`);
   }
   
   return data;
