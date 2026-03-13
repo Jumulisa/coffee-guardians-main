@@ -38,6 +38,13 @@
 ### Prerequisites
 
 - Node.js 18+ and npm
+## Link to the Notebook
+
+https://colab.research.google.com/drive/1329RDdWVMRZIwqBep6FSZxPVOOQ2Ex9z?usp=sharing
+
+## Link to the Video Demo
+
+https://drive.google.com/file/d/1Yf-vMjLuUpaidvusJ9-4b2IeXIWgXbpm/view?usp=sharing
 
 ### Installation
 
