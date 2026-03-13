@@ -4,31 +4,31 @@
 
 ## Features
 
-✨ **AI Disease Detection**
+ **AI Disease Detection**
 - Real-time disease diagnosis with confidence scoring
 - Predicts: Healthy, Red Spider Mite, Rust
 - Severity classification and affected area estimation
 
-🔐 **Authentication System**
+ **Authentication System**
 - Supabase authentication with email/password
 - Secure user profiles and session management
 - Protected routes for premium features
 - Profile settings and security management
 
-📱 **Mobile-Friendly**
+ **Mobile-Friendly**
 - Responsive design works on desktop, tablet, and mobile
 - Image upload and camera capture support
 
-🌍 **Multi-Language Support**
+ **Multi-Language Support**
 - English
 - Kinyarwanda
 
-✨ **Smooth Animations**
+ **Smooth Animations**
 - Fade-in, slide, and scale animations
 - Progress indicators and loading states
 - Beautiful UI with Tailwind CSS
 
-💾 **Database & Storage**
+ **Database & Storage**
 - Supabase PostgreSQL database
 - User profiles and diagnosis history
 - User preferences and settings
