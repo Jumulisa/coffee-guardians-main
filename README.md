@@ -38,6 +38,11 @@
 ### Prerequisites
 
 - Node.js 18+ and npm
+
+## Link of the App on Deployed render
+
+https://coffee-guardian-cz50.onrender.com/
+
 ## Link to the Notebook
 
 https://colab.research.google.com/drive/1329RDdWVMRZIwqBep6FSZxPVOOQ2Ex9z?usp=sharing
@@ -45,6 +50,21 @@ https://colab.research.google.com/drive/1329RDdWVMRZIwqBep6FSZxPVOOQ2Ex9z?usp=sh
 ## Link to the Video Demo
 
 https://drive.google.com/file/d/1Yf-vMjLuUpaidvusJ9-4b2IeXIWgXbpm/view?usp=sharing
+
+## Testing Results Screenshots
+
+<img width="1440" height="900" alt="Screenshot 2026-03-13 at 7 08 08 PM" src="https://github.com/user-attachments/assets/98474eb3-1ab8-4a97-b9fe-4fda9ae0035f" />
+
+<img width="2880" height="1800" alt="image" src="https://github.com/user-attachments/assets/e6a9c252-94b6-47a0-abae-d1e3eea82281" />
+
+<img width="2880" height="1800" alt="image" src="https://github.com/user-attachments/assets/0ba91238-b306-495e-b536-0d3e5f1c3ad8" />
+
+<img width="2880" height="1800" alt="image" src="https://github.com/user-attachments/assets/b6154ece-4408-4e47-a2e3-a4a786a1ceac" />
+
+<img width="2880" height="1800" alt="image" src="https://github.com/user-attachments/assets/cf73782e-6bdf-49bb-ac20-5107e1000daa" />
+
+<img width="2880" height="1800" alt="image" src="https://github.com/user-attachments/assets/9e93b190-2a18-4af2-8b47-2a366aa2b983" />
+
 
 ### Installation
 
