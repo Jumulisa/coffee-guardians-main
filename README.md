@@ -39,7 +39,7 @@
 
 - Node.js 18+ and npm
 
-## Link of the App on Deployed render
+## Link of the App on Deployed Render
 
 https://coffee-guardian-cz50.onrender.com/
 
@@ -95,7 +95,6 @@ VITE_SUPABASE_ANON_KEY=your-anon-key-here
 npm run dev
 ```
 
-Visit **http://localhost:5173** in your browser.
 
 ## Project Structure
 
