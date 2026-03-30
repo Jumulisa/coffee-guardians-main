@@ -6,10 +6,10 @@ const LegalPage = () => {
       <div className="max-w-4xl mx-auto space-y-6">
         <Card className="bg-white/5 border border-white/10 backdrop-blur-md">
           <CardHeader>
-            <CardTitle className="text-2xl md:text-3xl">Privacy Policy & End-User License Agreement (EULA)</CardTitle>
+            <CardTitle className="text-2xl md:text-3xl text-white">Privacy Policy & End-User License Agreement (EULA)</CardTitle>
             <CardDescription className="text-white/70">CoffeeGuard • Last updated: March 31, 2026</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4 text-sm md:text-base text-white/90 leading-relaxed">
+          <CardContent className="space-y-4 text-sm md:text-base text-white leading-relaxed">
             <p>
               This page explains how CoffeeGuard collects and uses data, and the terms that apply when you use the
               platform. By creating an account or continuing to use CoffeeGuard, you agree to this Privacy Policy and
@@ -20,9 +20,9 @@ const LegalPage = () => {
 
         <Card className="bg-white/5 border border-white/10 backdrop-blur-md">
           <CardHeader>
-            <CardTitle>Privacy Policy</CardTitle>
+            <CardTitle className="text-white">Privacy Policy</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 text-sm md:text-base text-white/90 leading-relaxed">
+          <CardContent className="space-y-4 text-sm md:text-base text-white leading-relaxed">
             <section className="space-y-2">
               <h3 className="font-semibold text-white">1. Data We Collect</h3>
               <p>
@@ -70,9 +70,9 @@ const LegalPage = () => {
 
         <Card className="bg-white/5 border border-white/10 backdrop-blur-md">
           <CardHeader>
-            <CardTitle>End-User License Agreement (EULA)</CardTitle>
+            <CardTitle className="text-white">End-User License Agreement (EULA)</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 text-sm md:text-base text-white/90 leading-relaxed">
+          <CardContent className="space-y-4 text-sm md:text-base text-white leading-relaxed">
             <section className="space-y-2">
               <h3 className="font-semibold text-white">1. License Grant</h3>
               <p>
