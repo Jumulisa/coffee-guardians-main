@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Coffee, Menu, X, LogOut, Home, History, Settings, Globe } from "lucide-react";
+import { Coffee, Menu, X, LogOut, Home, History, Settings, Globe, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -81,6 +81,14 @@ const Navbar = () => {
             >
               {(language === "rw" ? "IGENAMIGANI" : "SETTINGS")}
             </Link>
+            <Link
+              to="/legal"
+              className={`transition-colors text-sm tracking-wide ${
+                isActive("/legal") ? "text-white" : "text-white/60 hover:text-white"
+              }`}
+            >
+              {(language === "rw" ? "AMABWIRIZA" : "LEGAL")}
+            </Link>
           </div>
 
           {/* Auth Section */}
@@ -157,6 +165,12 @@ const Navbar = () => {
                       <span>Settings</span>
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="text-white/80 hover:text-white hover:bg-white/10 focus:bg-white/10 focus:text-white">
+                    <Link to="/legal" className="cursor-pointer">
+                      <FileText className="mr-2 h-4 w-4" />
+                      <span>Legal</span>
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-white/10" />
                   <DropdownMenuItem onClick={handleLogout} className="text-red-400 hover:text-red-300 hover:bg-white/10 focus:bg-white/10 cursor-pointer">
                     <LogOut className="mr-2 h-4 w-4" />
@@ -223,6 +237,15 @@ const Navbar = () => {
               onClick={() => setMobileMenuOpen(false)}
             >
               Settings
+            </Link>
+            <Link
+              to="/legal"
+              className={`block px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isActive("/legal") ? "text-white bg-white/10" : "text-white/80 hover:bg-white/10"
+              }`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Legal
             </Link>
             {!isAuthenticated && (
               <div className="pt-2 space-y-2 border-t border-white/10">

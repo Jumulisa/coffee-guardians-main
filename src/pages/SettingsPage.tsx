@@ -277,6 +277,13 @@ const SettingsPage = () => {
               <input type="checkbox" className="w-4 h-4" />
               <span className="text-sm font-medium text-white">Allow data sharing for research</span>
             </label>
+            <Button
+              variant="outline"
+              className="w-full text-white border-2 border-white/20 hover:bg-white/10 hover:border-white/40 transition-all duration-300"
+              onClick={() => navigate("/legal")}
+            >
+              View Privacy Policy & EULA
+            </Button>
           </CardContent>
         </Card>
 
