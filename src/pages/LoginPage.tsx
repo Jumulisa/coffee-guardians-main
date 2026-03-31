@@ -17,6 +17,7 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [hasAcceptedPolicy, setHasAcceptedPolicy] = useState(false);
   const { showError } = useGlobalError();
   const [signupSuccess, setSignupSuccess] = useState(false);
 
@@ -35,6 +36,12 @@ const LoginPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (!hasAcceptedPolicy) {
+      setError("Please confirm the Privacy Policy and EULA before signing in.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -135,10 +142,26 @@ const LoginPage = () => {
                 </Link>
               </div>
 
+              <label className="flex items-start gap-3 rounded-lg border border-white/10 bg-white/5 p-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={hasAcceptedPolicy}
+                  onChange={(e) => setHasAcceptedPolicy(e.target.checked)}
+                  className="mt-0.5 h-4 w-4"
+                />
+                <span className="text-sm text-white/90 leading-snug">
+                  I confirm that I have read and accept the{" "}
+                  <Link to="/legal" className="underline hover:text-white transition-colors">
+                    Privacy Policy and EULA
+                  </Link>
+                  .
+                </span>
+              </label>
+
               {/* Submit Button */}
               <Button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || !hasAcceptedPolicy}
                 size="lg"
                 className="w-full h-12 text-base font-semibold bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 shadow-[0_0_15px_rgba(34,197,94,0.3)] hover:shadow-[0_0_25px_rgba(34,197,94,0.5)] transition-all duration-300 group"
               >
